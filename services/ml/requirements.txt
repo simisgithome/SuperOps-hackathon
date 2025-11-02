@@ -7,7 +7,7 @@ scipy==1.11.4
 # Deep Learning (lightweight for Lambda)
 tensorflow==2.15.0
 torch==2.1.1
-transformers==4.36.0
+transformers==4.57.1
 
 # Feature Engineering
 feature-engine==1.6.2
