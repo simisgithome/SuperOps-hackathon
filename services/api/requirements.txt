@@ -20,7 +20,7 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # AWS SDK
-boto3==1.34.0
+boto3==1.40.64
 botocore==1.34.0
 
 # Monitoring & Logging
