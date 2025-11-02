@@ -46,7 +46,7 @@ jobs:
           npm outdated > outdated-ui.txt || true
       
       - name: Create issue for updates
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -129,7 +129,7 @@ jobs:
           retention-days: 30
       
       - name: Create security issue if vulnerabilities found
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
