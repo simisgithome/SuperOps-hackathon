@@ -56,7 +56,7 @@ jobs:
           pytest --cov=. --cov-report=xml --cov-report=term
       
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: ./services/api/coverage.xml
           flags: api
@@ -88,7 +88,7 @@ jobs:
           pytest --cov=. --cov-report=xml --cov-report=term
       
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: ./services/ml/coverage.xml
           flags: ml
