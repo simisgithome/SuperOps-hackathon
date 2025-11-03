@@ -19,7 +19,7 @@ prophet==1.1.5
 
 # Model Persistence
 joblib==1.3.2
-pickle5==0.0.12
+# Note: pickle5 is only needed for Python < 3.8. Python 3.11 has built-in pickle support.
 
 # AWS SDK
 boto3==1.34.0

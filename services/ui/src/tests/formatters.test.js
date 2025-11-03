@@ -44,8 +44,8 @@ describe('formatNumber', () => {
 
 describe('formatDate', () => {
   test('formats dates correctly', () => {
-    const date = new Date('2024-01-15');
-    const formatted = formatDate(date);
+    const dateString = '2024-01-15';
+    const formatted = formatDate(dateString);
     expect(formatted).toMatch(/Jan.*15.*2024/);
   });
 

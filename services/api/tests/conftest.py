@@ -2,10 +2,15 @@
 Test configuration and fixtures
 """
 import pytest
+import sys
+from pathlib import Path
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Add parent directory to path to import main
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from main import app
 from database import Base, get_db
@@ -58,9 +63,10 @@ def test_user(db_session):
     
     user = User(
         email="test@example.com",
+        username="testuser",
         hashed_password=pwd_context.hash("testpassword"),
-        full_name="Test User",
         role="msp",
+        company_name="Test Company",
         is_active=True
     )
     db_session.add(user)
@@ -73,12 +79,13 @@ def test_user(db_session):
 def auth_token(client, test_user):
     """Get authentication token"""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={
-            "username": "test@example.com",
+            "email": "test@example.com",
             "password": "testpassword"
         }
     )
+    assert response.status_code == 200
     return response.json()["access_token"]
 
 

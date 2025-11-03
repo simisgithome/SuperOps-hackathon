@@ -3,7 +3,7 @@ Authentication router
 Handles user registration, login, and JWT tokens
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -85,7 +85,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 @router.post("/login", response_model=Token)
-async def login(email: str, password: str, db: Session = Depends(get_db)):
+async def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     """Login and get access token"""
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
