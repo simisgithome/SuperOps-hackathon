@@ -25,16 +25,13 @@ import {
   AttachMoney,
   TrendingDown,
   Assessment,
-  Warning,
   Logout,
   Refresh,
   Block,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { itAPI, analyticsAPI } from '../services/api';
+import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { analyticsAPI } from '../services/api';
 import { formatCurrency, formatPercent, getSeverityColor } from '../utils/formatters';
-
-const COLORS = ['#2196f3', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#00bcd4'];
 
 const ITDashboard = ({ user, onLogout }) => {
   const [dashboard, setDashboard] = useState(null);

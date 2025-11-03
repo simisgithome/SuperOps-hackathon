@@ -100,7 +100,7 @@ const AIAssistant = ({ dashboardType }) => {
       const shuffled = [...suggestedQuestions].sort(() => 0.5 - Math.random());
       setRotatedQuestions(shuffled.slice(0, 3));
     }
-  }, [open]);
+  }, [open, suggestedQuestions]);
 
   useEffect(() => {
     // Auto-suggest questions based on input - show only when typing
@@ -113,7 +113,7 @@ const AIAssistant = ({ dashboardType }) => {
       // Show rotated questions when input is empty
       setFilteredSuggestions(rotatedQuestions);
     }
-  }, [input, rotatedQuestions]);
+  }, [input, rotatedQuestions, allQuestions]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

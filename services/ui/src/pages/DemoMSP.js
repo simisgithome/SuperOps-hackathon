@@ -18,16 +18,11 @@ import {
   FormControl,
   Select,
   MenuItem,
-  InputLabel,
-  Button,
-  IconButton,
-  Tooltip as MuiTooltip
+  InputLabel
 } from '@mui/material';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -72,7 +67,6 @@ const DemoMSP = () => {
 
   // Priority alerts state
   const [priorityAlerts, setPriorityAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   // Load statistics from database
   useEffect(() => {
@@ -86,7 +80,6 @@ const DemoMSP = () => {
   // Load priority alerts from backend
   useEffect(() => {
     const loadAlerts = async () => {
-      setLoading(true);
       try {
         const alerts = await clientsAPI.getAlerts('active');
         console.log('Loaded alerts from backend:', alerts);
@@ -107,8 +100,6 @@ const DemoMSP = () => {
         console.error('Error loading alerts:', error);
         // Use fallback static alerts if API fails
         setPriorityAlerts(getFallbackAlerts());
-      } finally {
-        setLoading(false);
       }
     };
     loadAlerts();

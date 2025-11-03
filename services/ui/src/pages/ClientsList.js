@@ -297,7 +297,7 @@ const ClientsList = () => {
 
     try {
       // Add client via API
-      const addedClient = await clientsAPI.create(newClient);
+      await clientsAPI.create(newClient);
       
       // Reload clients list
       const clients = await clientsAPI.getAll();

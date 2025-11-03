@@ -24,12 +24,10 @@ import {
   Logout,
   Refresh,
 } from '@mui/icons-material';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { mspAPI, analyticsAPI } from '../services/api';
-import { formatCurrency, formatPercent, getChurnRiskColor } from '../utils/formatters';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { analyticsAPI } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 import { clientsAPI } from '../services/clientsAPI';
-
-const COLORS = ['#4caf50', '#ff9800', '#f44336', '#2196f3', '#9c27b0'];
 
 const MSPDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -251,7 +249,6 @@ const MSPDashboard = ({ user, onLogout }) => {
                   const probability = client.churn_probability || client.churnProbability || 0;
                   const monthlySpend = client.monthly_spend || client.revenue || 0;
                   const healthScore = client.health_score || client.healthScore || 0;
-                  const riskLevel = client.churn_risk || client.churnRisk || 'high';
                   
                   return (
                     <Card 

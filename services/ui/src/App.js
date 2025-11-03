@@ -3,13 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Box, AppBar, Toolbar, Typography, Button, CircularProgress } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Link } from 'react-router-dom';
 
 // Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import MSPDashboard from './pages/MSPDashboard';
-import ITDashboard from './pages/ITDashboard';
 import ClientDetails from './pages/ClientDetails';
 import SoftwareDetails from './pages/SoftwareDetails';
 import DemoMSP from './pages/DemoMSP';
@@ -19,7 +16,7 @@ import MonthlyRevenue from './pages/MonthlyRevenue';
 import ActiveLicenses from './pages/ActiveLicenses';
 import AtRiskClients from './pages/AtRiskClients';
 import InactiveClients from './pages/InactiveClients';
-import { getCurrentUser, logoutUser } from './utils/auth';
+import { logoutUser } from './utils/auth';
 
 const theme = createTheme({
   palette: {

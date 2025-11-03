@@ -8,8 +8,6 @@ import {
   Button,
   Typography,
   Alert,
-  ToggleButtonGroup,
-  ToggleButton,
   CircularProgress,
   Divider
 } from '@mui/material';
@@ -20,7 +18,6 @@ const Login = ({ onLogin }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('msp');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

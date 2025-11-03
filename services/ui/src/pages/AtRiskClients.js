@@ -66,16 +66,6 @@ const AtRiskClients = () => {
     setStats({ highRisk, mediumRisk, potentialRevenueLoss });
   };
 
-  const getRiskColor = (probability) => {
-    if (probability > 70) return 'error';
-    return 'warning';
-  };
-
-  const getRiskLevel = (probability) => {
-    if (probability > 70) return 'High Risk';
-    return 'Medium Risk';
-  };
-
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" alignItems="center" mb={3}>

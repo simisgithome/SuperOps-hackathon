@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import AIAssistant from '../components/AIAssistant';
-import { itAPI } from '../services/api';
 import {
   Container,
   Grid,
@@ -25,14 +24,11 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
-  CircularProgress
+  InputLabel
 } from '@mui/material';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
