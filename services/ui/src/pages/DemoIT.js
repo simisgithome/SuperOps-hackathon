@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AIAssistant from '../components/AIAssistant';
 import {
   Container,

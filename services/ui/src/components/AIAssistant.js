@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -65,27 +65,30 @@ const AIAssistant = ({ dashboardType }) => {
   // Dashboard-specific knowledge base only (no common FAQs)
   const knowledgeBase = dashboardType === 'msp' ? mspFAQs : itFAQs;
 
-  const suggestedQuestions = dashboardType === 'msp' 
-    ? [
-        'How is client health calculated?',
-        'What causes high churn risk?',
-        'How do I track revenue trends?',
-        'What are priority alerts?',
-        'How to handle license compliance issues?',
-        'When should I renew contracts?',
-        'How to reduce support tickets?',
-        'What indicates a healthy client?'
-      ]
-    : [
-        'How to optimize software licenses?',
-        'What is usage tracking?',
-        'How to check compliance status?',
-        'How can I reduce software costs?',
-        'What are renewal schedules?',
-        'How to analyze user activity?',
-        'What security updates are needed?',
-        'How to generate reports?'
-      ];
+  // Memoize suggestedQuestions to prevent dependency changes on every render
+  const suggestedQuestions = useMemo(() => {
+    return dashboardType === 'msp' 
+      ? [
+          'How is client health calculated?',
+          'What causes high churn risk?',
+          'How do I track revenue trends?',
+          'What are priority alerts?',
+          'How to handle license compliance issues?',
+          'When should I renew contracts?',
+          'How to reduce support tickets?',
+          'What indicates a healthy client?'
+        ]
+      : [
+          'How to optimize software licenses?',
+          'What is usage tracking?',
+          'How to check compliance status?',
+          'How can I reduce software costs?',
+          'What are renewal schedules?',
+          'How to analyze user activity?',
+          'What security updates are needed?',
+          'How to generate reports?'
+        ];
+  }, [dashboardType]);
 
   // Only dashboard-specific questions (no common questions)
   const allQuestions = suggestedQuestions;
