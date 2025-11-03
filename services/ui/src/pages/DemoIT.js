@@ -46,10 +46,10 @@ import WarningIcon from '@mui/icons-material/Warning';
 import CloseIcon from '@mui/icons-material/Close';
 
 const DemoIT = () => {
-  const [openCostDialog, setOpenCostDialog] = React.useState(false);
-  const [selectedYear, setSelectedYear] = React.useState(2025);
-  const [fromMonth, setFromMonth] = React.useState('Jan');
-  const [toMonth, setToMonth] = React.useState('Dec');
+  const [openCostDialog, setOpenCostDialog] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [fromMonth, setFromMonth] = useState('Jan');
+  const [toMonth, setToMonth] = useState('Dec');
 
   // Get current date for filtering future data
   const currentDate = new Date();

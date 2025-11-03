@@ -74,7 +74,7 @@ const MSPDashboard = ({ user, onLogout }) => {
         churn_risks: highRiskClients.slice(0, 5)
       };
       
-      console.log('Dashboard Data:', dashboardData); // Debug log
+      // Dashboard data loaded successfully
       
       const [trendsRes] = await Promise.all([
         analyticsAPI.getRevenueTrends(30),

@@ -30,7 +30,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer
 } from 'recharts';
@@ -408,7 +408,7 @@ const DemoMSP = () => {
                 <XAxis dataKey="month" />
                 <YAxis yAxisId="left" />
                 <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
+                <RechartsTooltip />
                 <Legend />
                 <Line
                   yAxisId="left"
@@ -453,7 +453,7 @@ const DemoMSP = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <RechartsTooltip 
                   formatter={(value, name) => [value, name]}
                   contentStyle={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: '200px' }}
                 />

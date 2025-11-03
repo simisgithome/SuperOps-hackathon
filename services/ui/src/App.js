@@ -131,10 +131,10 @@ function App() {
         setUserRole(userData.role);
         // Update last activity time on page refresh
         localStorage.setItem('lastActivity', Date.now().toString());
-        console.log('Session restored for user:', userData.email);
+        // Session restored successfully
       } else {
         // Session expired, clear it
-        console.log('Session expired - clearing');
+        // Session expired, clearing storage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('lastActivity');
