@@ -30,7 +30,7 @@ flask==3.0.0
 flask-restful==0.3.10
 
 # Data Validation
-pydantic==2.5.0
+pydantic==2.12.4
 
 # Development
 pytest==7.4.3
