@@ -1,0 +1,28 @@
+{
+  "name": "pulseops-build",
+  "description": "Build Docker images for PulseOps",
+  "source": {
+    "type": "S3",
+    "location": "pulseops-build-source-285168796475/source.zip"
+  },
+  "artifacts": {
+    "type": "NO_ARTIFACTS"
+  },
+  "environment": {
+    "type": "LINUX_CONTAINER",
+    "image": "aws/codebuild/standard:7.0",
+    "computeType": "BUILD_GENERAL1_SMALL",
+    "privilegedMode": true,
+    "environmentVariables": [
+      {
+        "name": "AWS_DEFAULT_REGION",
+        "value": "us-east-2"
+      },
+      {
+        "name": "AWS_ACCOUNT_ID",
+        "value": "285168796475"
+      }
+    ]
+  },
+  "serviceRole": "arn:aws:iam::285168796475:role/PulseOpsCodeBuildRole"
+}
