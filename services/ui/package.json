@@ -12,7 +12,7 @@
     "react-scripts": "5.0.1",
     "react-router-dom": "^6.8.1",
     "web-vitals": "^2.1.4",
-    "axios": "^1.6.2",
+    "axios": "^1.13.2",
     "recharts": "^2.8.0",
     "@mui/material": "^5.15.0",
     "@mui/icons-material": "^5.15.0",
