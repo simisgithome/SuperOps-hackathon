@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AIAssistant from '../components/AIAssistant';
 import {
   Container,
@@ -46,6 +47,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import CloseIcon from '@mui/icons-material/Close';
 
 const DemoIT = () => {
+  const navigate = useNavigate();
   const [openCostDialog, setOpenCostDialog] = useState(false);
   const [selectedYear, setSelectedYear] = useState(2025);
   const [fromMonth, setFromMonth] = useState('Jan');
@@ -234,14 +236,17 @@ const DemoIT = () => {
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card 
               sx={{ 
-                cursor: index === 0 ? 'pointer' : 'default',
+                cursor: (index === 0 || index === 1) ? 'pointer' : 'default',
                 transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': index === 0 ? {
+                '&:hover': (index === 0 || index === 1) ? {
                   transform: 'translateY(-4px)',
                   boxShadow: 4
                 } : {}
               }}
-              onClick={() => index === 0 && setOpenCostDialog(true)}
+              onClick={() => {
+                if (index === 0) setOpenCostDialog(true);
+                if (index === 1) navigate('/it/licenses');
+              }}
             >
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="center">

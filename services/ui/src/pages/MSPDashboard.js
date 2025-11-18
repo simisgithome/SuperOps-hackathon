@@ -53,12 +53,19 @@ const MSPDashboard = ({ user, onLogout }) => {
       
       // Calculate high-risk clients (churn_probability > 70 or churn_risk === 'high')
       const highRiskClients = activeClients.filter(client => {
-        const probability = client.churn_probability || client.churnProbability || 0;
+        let probability = client.churn_probability || client.churnProbability || 0;
+        // Convert from decimal to percentage if needed
+        if (probability > 0 && probability < 1) {
+          probability = probability * 100;
+        }
         const risk = client.churn_risk || client.churnRisk;
         return risk === 'high' || probability > 70;
       }).sort((a, b) => {
-        const probA = a.churn_probability || a.churnProbability || 0;
-        const probB = b.churn_probability || b.churnProbability || 0;
+        let probA = a.churn_probability || a.churnProbability || 0;
+        let probB = b.churn_probability || b.churnProbability || 0;
+        // Convert from decimal to percentage if needed
+        if (probA > 0 && probA < 1) probA = probA * 100;
+        if (probB > 0 && probB < 1) probB = probB * 100;
         return probB - probA; // Sort by probability descending
       });
       
@@ -246,7 +253,11 @@ const MSPDashboard = ({ user, onLogout }) => {
               </Box>
               {dashboard?.churn_risks && dashboard.churn_risks.length > 0 ? (
                 dashboard.churn_risks.map((client) => {
-                  const probability = client.churn_probability || client.churnProbability || 0;
+                  let probability = client.churn_probability || client.churnProbability || 0;
+                  // Convert from decimal to percentage if needed
+                  if (probability > 0 && probability < 1) {
+                    probability = probability * 100;
+                  }
                   const monthlySpend = client.monthly_spend || client.revenue || 0;
                   const healthScore = client.health_score || client.healthScore || 0;
                   
@@ -267,13 +278,12 @@ const MSPDashboard = ({ user, onLogout }) => {
                             </Typography>
                           </Box>
                           <Chip
-                            label={`${probability}%`}
+                            label={`${Math.round(probability)}%`}
                             sx={{
                               backgroundColor: '#f44336',
                               color: 'white',
                               fontWeight: 600,
                             }}
-                            size="small"
                           />
                         </Box>
                         <Typography variant="body2" sx={{ mt: 1 }}>

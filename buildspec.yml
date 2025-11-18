@@ -1,0 +1,31 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - export REPOSITORY_URI_BACKEND=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-backend
+      - export REPOSITORY_URI_FRONTEND=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-frontend
+      - export IMAGE_TAG=latest
+  
+  build:
+    commands:
+      - echo "Building Backend..."
+      - cd services/api
+      - docker build -t pulseops-backend:latest .
+      - docker tag pulseops-backend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-backend:latest
+      - cd ../..
+      
+      - echo "Building Frontend..."
+      - cd services/ui
+      - docker build -t pulseops-frontend:latest .
+      - docker tag pulseops-frontend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-frontend:latest
+      - cd ../..
+  
+  post_build:
+    commands:
+      - echo "Pushing images..."
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-backend:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/pulseops-frontend:latest
+      - echo "Done!"

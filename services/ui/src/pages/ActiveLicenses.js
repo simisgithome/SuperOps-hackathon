@@ -20,13 +20,17 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Chip
+  Chip,
+  AppBar,
+  Toolbar,
+  IconButton
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { clientsAPI } from '../services/clientsAPI';
 
-const ActiveLicenses = () => {
+const ActiveLicenses = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [clients, setClients] = useState([]);
@@ -116,19 +120,20 @@ const ActiveLicenses = () => {
   ];
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" alignItems="center" mb={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(-1)}
-          sx={{ mr: 2 }}
-        >
-          Back
-        </Button>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Active Licenses Overview
-        </Typography>
-      </Box>
+    <Box sx={{ flexGrow: 1 }}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        <Box display="flex" alignItems="center" mb={3}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/it')}
+            sx={{ mr: 2 }}
+          >
+            Back to Dashboard
+          </Button>
+          <Typography variant="h4" sx={{ fontWeight: 600 }}>
+            Active Licenses Overview
+          </Typography>
+        </Box>
 
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -261,6 +266,19 @@ const ActiveLicenses = () => {
                   const clientId = client.client_id || client.id;
                   const isHighlighted = highlightedClientId === clientId;
                   
+                  // Get churn risk for color coding
+                  const churnRisk = client.churn_risk || 'low';
+                  const churnProbability = client.churn_probability || client.churnRisk || 0;
+                  const churnPercent = churnProbability < 1 ? churnProbability * 100 : churnProbability;
+                  
+                  // Color code based on churn risk
+                  let utilizationColor = 'success.main'; // green for low risk
+                  if (churnRisk === 'high' || churnPercent >= 70) {
+                    utilizationColor = 'error.main'; // red for high risk
+                  } else if (churnRisk === 'medium' || churnPercent >= 30) {
+                    utilizationColor = 'warning.main'; // yellow for medium risk
+                  }
+                  
                   return (
                     <TableRow 
                       key={clientId}
@@ -278,11 +296,17 @@ const ActiveLicenses = () => {
                       <TableCell align="right">{licenses.toLocaleString()}</TableCell>
                       <TableCell align="right">{users.toLocaleString()}</TableCell>
                       <TableCell align="right">
-                        <Typography 
-                          color={utilization > 90 ? 'success.main' : utilization > 70 ? 'warning.main' : 'error.main'}
-                        >
-                          {utilization}%
-                        </Typography>
+                        <Chip
+                          label={`${utilization}%`}
+                          size="small"
+                          sx={{
+                            backgroundColor: utilizationColor === 'error.main' ? '#ffebee' : 
+                                           utilizationColor === 'warning.main' ? '#fff3e0' : '#e8f5e9',
+                            color: utilizationColor === 'error.main' ? '#c62828' : 
+                                   utilizationColor === 'warning.main' ? '#f57c00' : '#2e7d32',
+                            fontWeight: 600
+                          }}
+                        />
                       </TableCell>
                       <TableCell align="center">
                         <Button
@@ -438,7 +462,8 @@ const ActiveLicenses = () => {
           </DialogActions>
         </Dialog>
       )}
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

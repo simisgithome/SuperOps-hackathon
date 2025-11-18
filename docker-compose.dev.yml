@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./services/api:/app
+    environment:
+      - DEBUG=1
+
+  frontend:
+    build:
+      target: build
+    command: ["npm", "start"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/ui:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend

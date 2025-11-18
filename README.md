@@ -58,6 +58,62 @@ Access the application:
 - UI Dashboard: http://localhost:3000
 - API Documentation: http://localhost:8000/docs
 
+### Docker Deployment 🐳
+
+Run the entire application stack using Docker Compose:
+
+#### Prerequisites
+- Docker
+- Docker Compose
+
+#### Quick Deploy
+```bash
+# Clone the repository
+git clone https://github.com/simisgithome/SuperOps-hackathon.git
+cd SuperOps-hackathon
+
+# Build and start containers
+docker-compose up --build
+```
+
+Access the dockerized application:
+- Frontend: http://localhost
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+#### Container Management
+```bash
+# Stop the application
+docker-compose down
+
+# View logs
+docker-compose logs -f
+
+# Restart a specific service
+docker-compose restart backend  # or frontend
+```
+
+#### Configuration Options
+
+1. **Database Selection**:
+   - Default: SQLite (no additional setup required)
+   - PostgreSQL: Uncomment the `db` service in `docker-compose.yml` and set `USE_SQLITE=false`
+
+2. **Development Mode**:
+   ```bash
+   # Run with hot-reload
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+   ```
+
+3. **Production Mode**:
+   ```bash
+   # Build production images
+   docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
+   
+   # Run in production mode
+   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+   ```
+
 ### AWS Deployment
 
 #### Quick Deploy (Recommended)

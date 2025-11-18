@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=pulseops
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - SECRET_KEY=your-secret-key-change-in-production
+      - USE_SQLITE=true
+    volumes:
+      - ./services/api:/app
+    networks:
+      - pulseops-network
+
+  frontend:
+    build:
+      context: ./services/ui
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pulseops-network
+
+  # Optional: PostgreSQL database (commented out since we're using SQLite by default)
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     - POSTGRES_DB=pulseops
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - pulseops-network
+
+networks:
+  pulseops-network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:

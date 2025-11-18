@@ -52,6 +52,7 @@ const ClientsList = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [healthScoreManuallySet, setHealthScoreManuallySet] = useState(false); // Track if user manually set health score in current session
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [newClient, setNewClient] = useState({
     client_id: '',
@@ -63,7 +64,7 @@ const ClientsList = () => {
     email: '',
     phone: '',
     total_users: 0,
-    health_score: 0,
+    health_score: '',
     churn_probability: 15,
     churn_risk: 'low',
     status: 'Active'
@@ -95,17 +96,33 @@ const ClientsList = () => {
     const clients = await clientsAPI.getAll();
     
     // Normalize data to handle both API (snake_case) and localStorage (camelCase)
-    const normalizedClients = clients.map(client => ({
-      ...client,
-      name: client.name,
-      industry: client.industry,
-      licenses: client.licenses || client.total_licenses || 0,
-      revenue: client.revenue || client.monthly_spend || 0,
-      status: client.status || 'Active',
-      healthScore: client.healthScore || client.health_score || 0,
-      churnRisk: client.churnRisk || client.churn_probability || 0,
-      employees: client.employees || client.total_users || 0
-    }));
+    const normalizedClients = clients.map(client => {
+      // Convert churn_probability from decimal to percentage if needed
+      let churnValue = client.churnRisk || client.churn_probability || 0;
+      // If value is between 0 and 1, it's a decimal (0.805), convert to percentage (80.5)
+      if (churnValue > 0 && churnValue < 1) {
+        churnValue = churnValue * 100;
+      }
+      
+      // Calculate utilization rate dynamically
+      const totalLicenses = client.licenses || client.total_licenses || 0;
+      const totalUsers = client.employees || client.total_users || 0;
+      const utilizationRate = client.utilization_rate || 
+        (totalLicenses > 0 ? Math.round((totalUsers / totalLicenses) * 100) : 0);
+      
+      return {
+        ...client,
+        name: client.name,
+        industry: client.industry,
+        licenses: totalLicenses,
+        revenue: client.revenue || client.monthly_spend || 0,
+        status: client.status || 'Active',
+        healthScore: client.healthScore ?? client.health_score ?? null,
+        churnRisk: churnValue,
+        employees: totalUsers,
+        utilizationRate: utilizationRate
+      };
+    });
     
     setAllClients(normalizedClients);
   };
@@ -219,7 +236,7 @@ const ClientsList = () => {
       email: '',
       phone: '',
       total_users: 0,
-      health_score: 0,
+      health_score: '',
       churn_probability: 15,
       churn_risk: 'low',
       status: 'Active'
@@ -229,29 +246,44 @@ const ClientsList = () => {
   const handleFormChange = (field) => (event) => {
     let value = event.target.value;
     
-    // Special handling for health_score
-    if (field === 'health_score') {
-      // Remove leading zeros
-      value = value.replace(/^0+/, '') || '0';
+    // Special handling for numeric fields
+    if (field === 'health_score' || field === 'total_licenses' || field === 'monthly_spend' || field === 'total_users' || field === 'churn_probability') {
+      // If empty, keep as empty string (not 0)
+      if (value === '' || value === null) {
+        setNewClient(prev => ({
+          ...prev,
+          [field]: ''
+        }));
+        return;
+      }
       
-      // Only allow numbers 0-100
-      const numValue = parseInt(value, 10);
-      if (value !== '' && (!isNaN(numValue) && (numValue < 0 || numValue > 100))) {
+      // Remove leading zeros for non-zero numbers
+      value = value.replace(/^0+(\d)/, '$1');
+      
+      // Parse as number
+      const numValue = parseFloat(value);
+      
+      // Validate health_score range
+      if (field === 'health_score' && !isNaN(numValue) && (numValue < 0 || numValue > 100)) {
         return; // Don't update if out of range
+      }
+      
+      // Validate that it's a valid number or empty
+      if (value !== '' && isNaN(numValue)) {
+        return; // Don't update if not a valid number
       }
       
       setNewClient(prev => ({
         ...prev,
-        [field]: value === '' ? 0 : numValue
+        [field]: value === '' ? '' : numValue
       }));
       return;
     }
     
+    // For non-numeric fields
     setNewClient(prev => ({
       ...prev,
-      [field]: field === 'total_licenses' || field === 'monthly_spend' || field === 'total_users' || field === 'churn_probability'
-        ? parseFloat(value) || 0
-        : value
+      [field]: value
     }));
   };
 
@@ -284,22 +316,41 @@ const ClientsList = () => {
       return;
     }
 
-    // Validate health score (must be between 0-100)
-    const healthScore = parseFloat(newClient.health_score);
-    if (isNaN(healthScore) || healthScore < 0 || healthScore > 100) {
-      setSnackbar({
-        open: true,
-        message: 'Health Score must be between 0 and 100',
-        severity: 'error'
-      });
-      return;
+    // Validate health score if provided (must be between 0-100)
+    if (newClient.health_score !== '' && newClient.health_score !== null) {
+      const healthScore = parseFloat(newClient.health_score);
+      if (!isNaN(healthScore) && (healthScore < 0 || healthScore > 100)) {
+        setSnackbar({
+          open: true,
+          message: 'Health Score must be between 0 and 100',
+          severity: 'error'
+        });
+        return;
+      }
     }
 
     try {
-      // Add client via API
-      await clientsAPI.create(newClient);
+      // Prepare client data - properly exclude health_score if empty/0 to allow auto-calculation
+      const clientData = { ...newClient };
       
-      // Reload clients list
+      // Remove health_score from payload if it's empty, null, or 0
+      // This tells the backend to auto-calculate using ML model
+      const healthScoreValue = clientData.health_score;
+      if (healthScoreValue === '' || 
+          healthScoreValue === null || 
+          healthScoreValue === undefined || 
+          healthScoreValue === 0 || 
+          healthScoreValue === '0') {
+        delete clientData.health_score;
+      } else {
+        // Convert to float if it's a valid number
+        clientData.health_score = parseFloat(healthScoreValue);
+      }
+      
+      // Add client via API
+      const createdClient = await clientsAPI.create(clientData);
+      
+      // Reload clients list to get updated data
       const clients = await clientsAPI.getAll();
       const normalizedClients = clients.map(client => ({
         ...client,
@@ -308,15 +359,21 @@ const ClientsList = () => {
         licenses: client.licenses || client.total_licenses || 0,
         revenue: client.revenue || client.monthly_spend || 0,
         status: client.status || 'Active',
-        healthScore: client.healthScore || client.health_score || 0,
+        healthScore: client.healthScore ?? client.health_score ?? null,
         churnRisk: client.churnRisk || client.churn_probability || 0,
         employees: client.employees || client.total_users || 0
       }));
       setAllClients(normalizedClients);
       
+      // Show success message with health score if calculated
+      const healthScore = createdClient.health_score ?? createdClient.healthScore;
+      const healthScoreMsg = healthScore !== null && healthScore !== undefined 
+        ? ` Health Score: ${healthScore}` 
+        : '';
+      
       setSnackbar({
         open: true,
-        message: `Client added successfully! Client ID: ${newClient.client_id}`,
+        message: `Client added successfully! Client ID: ${createdClient.client_id}${healthScoreMsg}`,
         severity: 'success'
       });
       
@@ -343,10 +400,13 @@ const ClientsList = () => {
       total_licenses: client.licenses || client.total_licenses || 0,
       monthly_spend: client.revenue || client.monthly_spend || 0,
       total_users: client.employees || client.total_users || 0,
-      health_score: client.healthScore || client.health_score || 85,
+      health_score: client.healthScore ?? client.health_score ?? '',
       churn_probability: client.churnRisk || client.churn_probability || 15,
       status: client.status || 'Active'
     });
+    
+    // Reset the manual flag - user hasn't set health score in this edit session yet
+    setHealthScoreManuallySet(false);
     
     setOpenEditDialog(true);
   };
@@ -359,29 +419,98 @@ const ClientsList = () => {
   const handleEditFormChange = (field) => (event) => {
     let value = event.target.value;
     
-    // Special handling for health_score
+    // Special handling for health_score - user is manually setting it
     if (field === 'health_score') {
-      // Remove leading zeros
-      value = value.replace(/^0+/, '') || '0';
+      // Allow empty string
+      if (value === '' || value === null) {
+        setHealthScoreManuallySet(false);
+        setSelectedClient(prev => ({
+          ...prev,
+          [field]: ''
+        }));
+        return;
+      }
+      
+      // Remove leading zeros for non-zero numbers
+      value = value.replace(/^0+(\d)/, '$1');
+      
+      // Parse as number
+      const numValue = parseFloat(value);
       
       // Only allow numbers 0-100
-      const numValue = parseInt(value, 10);
-      if (value !== '' && (!isNaN(numValue) && (numValue < 0 || numValue > 100))) {
+      if (!isNaN(numValue) && (numValue < 0 || numValue > 100)) {
         return; // Don't update if out of range
       }
       
+      // Validate that it's a valid number
+      if (value !== '' && isNaN(numValue)) {
+        return;
+      }
+      
+      // Mark that user manually set health score in this session
+      setHealthScoreManuallySet(value !== '');
+      
+      // Keep as empty string if no value, otherwise use the number
       setSelectedClient(prev => ({
         ...prev,
-        [field]: value === '' ? 0 : numValue
+        [field]: value === '' ? '' : numValue
       }));
       return;
     }
     
+    // Handle other numeric fields
+    if (field === 'total_licenses' || field === 'monthly_spend' || field === 'total_users' || field === 'churn_probability') {
+      // Allow empty string
+      if (value === '' || value === null) {
+        setSelectedClient(prev => {
+          const updatedClient = {
+            ...prev,
+            [field]: ''
+          };
+          
+          // If one of the 3 key fields changed AND user hasn't manually set health score
+          if (['total_licenses', 'total_users', 'monthly_spend'].includes(field) && !healthScoreManuallySet) {
+            updatedClient.health_score = '';
+          }
+          
+          return updatedClient;
+        });
+        return;
+      }
+      
+      // Remove leading zeros for non-zero numbers
+      value = value.replace(/^0+(\d)/, '$1');
+      
+      // Parse as number
+      const numValue = parseFloat(value);
+      
+      // Validate that it's a valid number
+      if (value !== '' && isNaN(numValue)) {
+        return;
+      }
+      
+      setSelectedClient(prev => {
+        const updatedClient = {
+          ...prev,
+          [field]: value === '' ? '' : numValue
+        };
+        
+        // If one of the 3 key fields changed AND user hasn't manually set health score in this session
+        // Clear health score to trigger backend recalculation
+        if (['total_licenses', 'total_users', 'monthly_spend'].includes(field) && !healthScoreManuallySet) {
+          console.log(`🔄 ${field} changed, clearing health_score for auto-calculation`);
+          updatedClient.health_score = '';
+        }
+        
+        return updatedClient;
+      });
+      return;
+    }
+    
+    // For non-numeric fields
     setSelectedClient(prev => ({
       ...prev,
-      [field]: field === 'total_licenses' || field === 'monthly_spend' || field === 'total_users' || field === 'churn_probability'
-        ? parseFloat(value) || 0
-        : value
+      [field]: value
     }));
   };
 
@@ -403,42 +532,91 @@ const ClientsList = () => {
       return;
     }
 
-    // Validate health score (must be between 0-100)
-    const healthScore = parseFloat(selectedClient.health_score);
-    if (isNaN(healthScore) || healthScore < 0 || healthScore > 100) {
-      setSnackbar({
-        open: true,
-        message: 'Health Score must be between 0 and 100',
-        severity: 'error'
-      });
-      return;
+    // Validate health score if provided (must be between 0-100)
+    if (selectedClient.health_score !== '' && selectedClient.health_score !== null && selectedClient.health_score !== undefined) {
+      const healthScore = parseFloat(selectedClient.health_score);
+      if (!isNaN(healthScore) && (healthScore < 0 || healthScore > 100)) {
+        setSnackbar({
+          open: true,
+          message: 'Health Score must be between 0 and 100',
+          severity: 'error'
+        });
+        return;
+      }
     }
 
     try {
-      await clientsAPI.update(selectedClient.id, selectedClient);
+      // Prepare update data - properly exclude health_score if empty/0 to allow auto-calculation
+      const updateData = { ...selectedClient };
       
-      // Reload clients
+      console.log('=== UPDATE CLIENT ===');
+      console.log('Selected client health_score:', selectedClient.health_score);
+      console.log('Health score manually set:', healthScoreManuallySet);
+      
+      // Remove health_score from payload if it's empty, null, undefined, or 0
+      // This tells the backend to auto-calculate using ML model
+      const healthScoreValue = updateData.health_score;
+      if (healthScoreValue === '' || 
+          healthScoreValue === null || 
+          healthScoreValue === undefined || 
+          healthScoreValue === 0 || 
+          healthScoreValue === '0') {
+        delete updateData.health_score;
+        console.log('✓ Health score DELETED from payload - will auto-calculate');
+      } else {
+        // Convert to float if it's a valid number
+        updateData.health_score = parseFloat(healthScoreValue);
+        console.log('Manual health score included:', updateData.health_score);
+      }
+      
+      console.log('Update payload:', JSON.stringify(updateData, null, 2));
+      
+      // Update the client
+      await clientsAPI.update(selectedClient.id, updateData);
+      
+      // Fetch the complete updated client data to get the recalculated health score
+      const updatedClient = await clientsAPI.getById(selectedClient.id);
+      console.log('Updated client from API:', updatedClient);
+      console.log('New health_score:', updatedClient.health_score);
+      
+      // Reload all clients to refresh the list with updated data
       const clients = await clientsAPI.getAll();
-      const normalizedClients = clients.map(client => ({
-        ...client,
-        name: client.name,
-        industry: client.industry,
-        licenses: client.licenses || client.total_licenses || 0,
-        revenue: client.revenue || client.monthly_spend || 0,
-        status: client.status || 'Active',
-        healthScore: client.healthScore || client.health_score || 0,
-        churnRisk: client.churnRisk || client.churn_probability || 0,
-        employees: client.employees || client.total_users || 0
-      }));
+      const normalizedClients = clients.map(client => {
+        // Convert churn_probability from decimal to percentage if needed
+        let churnValue = client.churnRisk || client.churn_probability || 0;
+        // If value is between 0 and 1, it's a decimal (0.805), convert to percentage (80.5)
+        if (churnValue > 0 && churnValue < 1) {
+          churnValue = churnValue * 100;
+        }
+        
+        return {
+          ...client,
+          name: client.name,
+          industry: client.industry,
+          licenses: client.licenses || client.total_licenses || 0,
+          revenue: client.revenue || client.monthly_spend || 0,
+          status: client.status || 'Active',
+          healthScore: client.healthScore ?? client.health_score ?? null,
+          churnRisk: churnValue,
+          employees: client.employees || client.total_users || 0
+        };
+      });
       setAllClients(normalizedClients);
+      
+      // Close the dialog
+      handleCloseEditDialog();
+      
+      // Show success message with updated health score
+      const newHealthScore = updatedClient.health_score ?? updatedClient.healthScore;
+      const healthScoreMsg = newHealthScore !== null && newHealthScore !== undefined 
+        ? ` Health Score: ${newHealthScore}` 
+        : '';
       
       setSnackbar({
         open: true,
-        message: 'Client updated successfully!',
+        message: `Client updated successfully!${healthScoreMsg}`,
         severity: 'success'
       });
-      
-      handleCloseEditDialog();
     } catch (error) {
       console.error('Error updating client:', error);
       setSnackbar({
@@ -474,7 +652,7 @@ const ClientsList = () => {
         licenses: client.licenses || client.total_licenses || 0,
         revenue: client.revenue || client.monthly_spend || 0,
         status: client.status || 'Active',
-        healthScore: client.healthScore || client.health_score || 0,
+        healthScore: client.healthScore ?? client.health_score ?? null,
         churnRisk: client.churnRisk || client.churn_probability || 0,
         employees: client.employees || client.total_users || 0
       }));
@@ -657,17 +835,23 @@ const ClientsList = () => {
                     <TableCell align="center">{client.licenses}</TableCell>
                     <TableCell align="right">${client.revenue.toLocaleString()}</TableCell>
                     <TableCell align="center">
-                      <Chip
-                        label={`${client.healthScore}%`}
-                        color={getHealthColor(client.healthScore)}
-                        size="small"
-                      />
+                      {client.healthScore !== null && client.healthScore !== undefined ? (
+                        <Chip
+                          label={`${client.healthScore}%`}
+                          color={getHealthColor(client.healthScore)}
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">-</Typography>
+                      )}
                     </TableCell>
                     <TableCell align="center">
                       <Chip
-                        label={`${client.churnRisk}%`}
-                        color={getRiskColor(client.churnRisk)}
-                        size="small"
+                        label={`${Math.round(client.churnRisk)}%`}
+                        sx={{
+                          backgroundColor: client.churnRisk >= 70 ? '#f44336' : client.churnRisk >= 30 ? '#ffc107' : '#4caf50',
+                          color: 'white',
+                          fontWeight: 'bold'
+                        }}
                       />
                     </TableCell>
                     <TableCell align="center">
@@ -769,6 +953,8 @@ const ClientsList = () => {
                   type="number"
                   value={newClient.total_licenses}
                   onChange={handleFormChange('total_licenses')}
+                  placeholder="0"
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -778,6 +964,8 @@ const ClientsList = () => {
                   type="number"
                   value={newClient.monthly_spend}
                   onChange={handleFormChange('monthly_spend')}
+                  placeholder="0"
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -787,6 +975,8 @@ const ClientsList = () => {
                   type="number"
                   value={newClient.total_users}
                   onChange={handleFormChange('total_users')}
+                  placeholder="0"
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -797,7 +987,9 @@ const ClientsList = () => {
                   value={newClient.health_score}
                   onChange={handleFormChange('health_score')}
                   inputProps={{ min: 0, max: 100, step: 1 }}
-                  helperText="Enter a value between 0 and 100"
+                  helperText="Leave empty to auto-calculate using ML model"
+                  placeholder="0"
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -898,6 +1090,8 @@ const ClientsList = () => {
                     type="number"
                     value={selectedClient.total_licenses}
                     onChange={handleEditFormChange('total_licenses')}
+                    placeholder="0"
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -907,6 +1101,8 @@ const ClientsList = () => {
                     type="number"
                     value={selectedClient.monthly_spend}
                     onChange={handleEditFormChange('monthly_spend')}
+                    placeholder="0"
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -916,6 +1112,8 @@ const ClientsList = () => {
                     type="number"
                     value={selectedClient.total_users}
                     onChange={handleEditFormChange('total_users')}
+                    placeholder="0"
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -926,7 +1124,9 @@ const ClientsList = () => {
                     value={selectedClient.health_score}
                     onChange={handleEditFormChange('health_score')}
                     inputProps={{ min: 0, max: 100, step: 1 }}
-                    helperText="Enter a value between 0 and 100"
+                    helperText="Leave empty to auto-calculate using ML model"
+                    placeholder="0"
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>

@@ -70,19 +70,32 @@ const ClientDetails = ({ user, onLogout }) => {
       }
       
       // Normalize data to handle both API (snake_case) and localStorage (camelCase)
+      // Convert churn_probability from decimal to percentage if needed
+      let churnRiskValue = clientData.churnRisk || clientData.churn_probability || 0;
+      // If value is less than 1, it's a decimal (0.805), convert to percentage (80.5)
+      if (churnRiskValue > 0 && churnRiskValue < 1) {
+        churnRiskValue = churnRiskValue * 100;
+      }
+      
+      // Calculate utilization rate dynamically
+      const totalLicenses = clientData.licenses || clientData.total_licenses || 0;
+      const totalUsers = clientData.employees || clientData.total_users || 0;
+      const utilizationRate = clientData.utilization_rate || 
+        (totalLicenses > 0 ? Math.round((totalUsers / totalLicenses) * 100) : 0);
+      
       const normalizedClient = {
         ...clientData,
         id: clientData.id,
         name: clientData.name || 'Unknown',
         industry: clientData.industry || 'N/A',
-        licenses: clientData.licenses || clientData.total_licenses || 0,
+        licenses: totalLicenses,
         revenue: clientData.revenue || clientData.monthly_spend || 0,
         status: clientData.status || 'Active',
         healthScore: clientData.healthScore || clientData.health_score || 0,
-        churnRisk: clientData.churnRisk || clientData.churn_probability || 0,
-        employees: clientData.employees || clientData.total_users || 0,
-        activeUsers: clientData.activeUsers || clientData.total_users || 0,
-        usageRate: clientData.usageRate || 90,
+        churnRisk: churnRiskValue,
+        employees: totalUsers,
+        activeUsers: totalUsers,
+        usageRate: utilizationRate,
         since: clientData.since || new Date().toISOString().split('T')[0],
         contact: clientData.contact || 'Not Available',
         email: clientData.email || 'not.available@example.com',
@@ -269,20 +282,60 @@ const ClientDetails = ({ user, onLogout }) => {
   };
 
   const handleSaveChanges = async () => {
-    // Update client in database
-    const updatedClient = {
-      ...client,
-      contact: editFormData.contact,
-      email: editFormData.email,
-      phone: editFormData.phone,
-      employees: parseInt(editFormData.employees) || client.employees
-    };
-    
-    await clientsAPI.update(parseInt(clientId), updatedClient);
-    
-    // Update local state
-    setClient(updatedClient);
-    setOpenEditDialog(false);
+    try {
+      // Update client in database
+      const updatedClient = {
+        ...client,
+        contact: editFormData.contact,
+        email: editFormData.email,
+        phone: editFormData.phone,
+        employees: parseInt(editFormData.employees) || client.employees
+      };
+      
+      await clientsAPI.update(parseInt(clientId), updatedClient);
+      
+      // Fetch the complete updated client data from API to get recalculated health score and churn risk
+      const freshClientData = await clientsAPI.getById(parseInt(clientId));
+      
+      // Convert churn_probability from decimal to percentage if needed
+      let churnRiskValue = freshClientData.churnRisk || freshClientData.churn_probability || 0;
+      if (churnRiskValue > 0 && churnRiskValue < 1) {
+        churnRiskValue = churnRiskValue * 100;
+      }
+      
+      // Calculate utilization rate dynamically from fresh data
+      const totalLicenses = freshClientData.licenses || freshClientData.total_licenses || 0;
+      const totalUsers = freshClientData.employees || freshClientData.total_users || 0;
+      const utilizationRate = freshClientData.utilization_rate || 
+        (totalLicenses > 0 ? Math.round((totalUsers / totalLicenses) * 100) : 0);
+      
+      // Normalize the fresh data
+      const normalizedClient = {
+        ...freshClientData,
+        id: freshClientData.id,
+        name: freshClientData.name || 'Unknown',
+        industry: freshClientData.industry || 'N/A',
+        licenses: totalLicenses,
+        revenue: freshClientData.revenue || freshClientData.monthly_spend || 0,
+        status: freshClientData.status || 'Active',
+        healthScore: freshClientData.healthScore || freshClientData.health_score || 0,
+        churnRisk: churnRiskValue,
+        employees: totalUsers,
+        activeUsers: totalUsers,
+        usageRate: utilizationRate,
+        since: freshClientData.since || new Date().toISOString().split('T')[0],
+        contact: freshClientData.contact || 'Not Available',
+        email: freshClientData.email || 'not.available@example.com',
+        phone: freshClientData.phone || 'N/A'
+      };
+      
+      // Update local state with fresh data
+      setClient(normalizedClient);
+      setOpenEditDialog(false);
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      alert('Failed to save changes. Please try again.');
+    }
   };
 
   return (
@@ -406,8 +459,8 @@ const ClientDetails = ({ user, onLogout }) => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ 
             height: '100%',
-            bgcolor: client.churnRisk > 25 ? '#ffebee' : '#fffde7',
-            borderLeft: `4px solid ${client.churnRisk > 25 ? '#f44336' : '#ffc107'}`,
+            bgcolor: client.churnRisk >= 70 ? '#ffebee' : client.churnRisk >= 30 ? '#fff9e6' : '#e8f5e9',
+            borderLeft: `4px solid ${client.churnRisk >= 70 ? '#f44336' : client.churnRisk >= 30 ? '#ffc107' : '#4caf50'}`,
             boxShadow: 3
           }}>
             <CardContent sx={{ minHeight: 140 }}>
@@ -419,9 +472,9 @@ const ClientDetails = ({ user, onLogout }) => {
                   <Typography variant="h4" sx={{ 
                     mt: 1, 
                     fontWeight: 600, 
-                    color: client.churnRisk > 25 ? '#c62828' : '#f57c00'
+                    color: client.churnRisk >= 70 ? '#c62828' : client.churnRisk >= 30 ? '#f57c00' : '#2e7d32'
                   }}>
-                    {client.churnRisk}%
+                    {Math.round(client.churnRisk)}%
                   </Typography>
                   <LinearProgress 
                     variant="determinate" 
@@ -668,7 +721,6 @@ const ClientDetails = ({ user, onLogout }) => {
                         rec.priority === 'Medium' ? 'warning' : 
                         'default'
                       }
-                      size="small"
                       sx={{ fontWeight: 600 }}
                     />
                   </Box>

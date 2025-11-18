@@ -52,6 +52,13 @@ class Client(Base):
     # Relationships
     owner = relationship("User", back_populates="clients")
     metrics = relationship("ClientMetric", back_populates="client")
+    
+    @property
+    def utilization_rate(self):
+        """Calculate utilization rate dynamically based on total_users and total_licenses"""
+        if self.total_licenses and self.total_licenses > 0:
+            return round((self.total_users / self.total_licenses) * 100, 2) if self.total_users else 0
+        return 0
 
 class ClientMetric(Base):
     __tablename__ = "client_metrics"
