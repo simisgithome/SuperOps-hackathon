@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -28,6 +29,7 @@ import {
   Logout,
   Refresh,
   Block,
+  CheckCircle,
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { itAPI, analyticsAPI } from '../services/api';
@@ -36,6 +38,7 @@ import { formatCurrency, formatPercent, getSeverityColor } from '../utils/format
 const COLORS = ['#2196f3', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#00bcd4'];
 
 const ITDashboard = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [trends, setTrends] = useState(null);
   const [deptSpend, setDeptSpend] = useState([]);
@@ -91,8 +94,19 @@ const ITDashboard = ({ user, onLogout }) => {
     );
   }
 
-  const MetricCard = ({ title, value, icon, color, subtitle }) => (
-    <Card sx={{ height: '100%' }}>
+  const MetricCard = ({ title, value, icon, color, subtitle, clickable, onClick }) => (
+    <Card 
+      sx={{ 
+        height: '100%',
+        cursor: clickable ? 'pointer' : 'default',
+        transition: 'all 0.3s ease',
+        '&:hover': clickable ? {
+          transform: 'translateY(-4px)',
+          boxShadow: 6
+        } : {}
+      }}
+      onClick={clickable ? onClick : undefined}
+    >
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
@@ -163,11 +177,13 @@ const ITDashboard = ({ user, onLogout }) => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              title="Avg Utilization"
-              value={formatPercent(dashboard?.avg_utilization || 0)}
-              icon={<TrendingDown sx={{ fontSize: 32, color: '#ff9800' }} />}
-              color="#ff9800"
-              subtitle={`${dashboard?.active_licenses || 0} / ${dashboard?.total_licenses || 0} licenses`}
+              title="Active Licenses"
+              value={dashboard?.active_licenses || 0}
+              icon={<CheckCircle sx={{ fontSize: 32, color: '#4caf50' }} />}
+              color="#4caf50"
+              subtitle={`${dashboard?.total_licenses || 0} total licenses`}
+              clickable={true}
+              onClick={() => navigate('/it/licenses')}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>

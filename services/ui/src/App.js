@@ -360,6 +360,17 @@ function App() {
             } 
           />
           
+          <Route 
+            path="/it/licenses" 
+            element={
+              isAuthenticated && userRole === 'it_admin' ? (
+                <ActiveLicenses user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
           {/* Default Route - Redirect based on authentication */}
           <Route 
             path="/" 

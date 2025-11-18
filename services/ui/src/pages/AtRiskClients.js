@@ -44,11 +44,18 @@ const AtRiskClients = () => {
     // Filter HIGH-RISK clients only (churn_risk is 'high' or churn_probability > 70)
     const atRisk = activeClients.filter(client => {
       const risk = client.churn_risk || client.churnRisk;
-      const probability = client.churn_probability || client.churnProbability || 0;
+      let probability = client.churn_probability || client.churnProbability || 0;
+      // Convert from decimal to percentage if needed
+      if (probability > 0 && probability < 1) {
+        probability = probability * 100;
+      }
       return risk === 'high' || probability > 70;
     }).sort((a, b) => {
-      const probA = a.churn_probability || a.churnProbability || 0;
-      const probB = b.churn_probability || b.churnProbability || 0;
+      let probA = a.churn_probability || a.churnProbability || 0;
+      let probB = b.churn_probability || b.churnProbability || 0;
+      // Convert from decimal to percentage if needed
+      if (probA > 0 && probA < 1) probA = probA * 100;
+      if (probB > 0 && probB < 1) probB = probB * 100;
       return probB - probA;
     });
 
@@ -58,8 +65,12 @@ const AtRiskClients = () => {
 
     const potentialRevenueLoss = atRisk.reduce((sum, client) => {
       const revenue = client.monthly_spend || client.revenue || 0;
-      const probability = (client.churn_probability || client.churnProbability || 0) / 100;
-      return sum + (revenue * probability);
+      let probability = client.churn_probability || client.churnProbability || 0;
+      // Convert from decimal to percentage if needed
+      if (probability > 0 && probability < 1) {
+        probability = probability * 100;
+      }
+      return sum + (revenue * (probability / 100));
     }, 0);
 
     setAtRiskClients(atRisk);
@@ -140,7 +151,11 @@ const AtRiskClients = () => {
             </TableHead>
             <TableBody>
               {atRiskClients.map((client) => {
-                  const probability = client.churn_probability || client.churnProbability || 0;
+                  let probability = client.churn_probability || client.churnProbability || 0;
+                  // Convert from decimal to percentage if needed
+                  if (probability > 0 && probability < 1) {
+                    probability = probability * 100;
+                  }
                   const revenue = client.monthly_spend || client.revenue || 0;
                   const healthScore = client.health_score || client.healthScore || 0;
                   
@@ -156,21 +171,31 @@ const AtRiskClients = () => {
                       <TableCell align="center">
                         <Chip
                           label="High Risk"
-                          color="error"
-                          size="small"
+                          sx={{
+                            backgroundColor: '#f44336',
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}
                           icon={<WarningIcon />}
                         />
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
-                          <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600, color: 'error.main' }}>
-                            {probability}%
+                          <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600, color: '#f44336' }}>
+                            {Math.round(probability)}%
                           </Typography>
                           <LinearProgress
                             variant="determinate"
                             value={Math.min(probability, 100)}
-                            color="error"
-                            sx={{ width: '100%', height: 8, borderRadius: 4 }}
+                            sx={{ 
+                              width: '100%', 
+                              height: 8, 
+                              borderRadius: 4,
+                              backgroundColor: '#ffcdd2',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#f44336'
+                              }
+                            }}
                           />
                         </Box>
                       </TableCell>

@@ -1,9 +1,13 @@
 {
   "name": "pulseops-build",
-  "description": "Build Docker images for PulseOps",
+  "description": "Build Docker images for PulseOps from GitHub",
   "source": {
-    "type": "S3",
-    "location": "pulseops-build-source-285168796475/source.zip"
+    "type": "GITHUB",
+    "location": "https://github.com/simisgithome/SuperOps-hackathon.git",
+    "gitCloneDepth": 1,
+    "gitSubmodulesConfig": {
+      "fetchSubmodules": false
+    }
   },
   "artifacts": {
     "type": "NO_ARTIFACTS"
@@ -24,5 +28,11 @@
       }
     ]
   },
-  "serviceRole": "arn:aws:iam::285168796475:role/PulseOpsCodeBuildRole"
+  "serviceRole": "arn:aws:iam::285168796475:role/PulseOpsCodeBuildRole",
+  "logsConfig": {
+    "cloudWatchLogs": {
+      "status": "ENABLED",
+      "groupName": "/aws/codebuild/pulseops-build"
+    }
+  }
 }
